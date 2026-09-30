@@ -1,5 +1,7 @@
 import torch
+import torch.nn as nn
 import torch.nn.functional as F
+import torch.optim as optim
 import matplotlib.pyplot as plt
 from torchvision import transforms
 
@@ -14,10 +16,10 @@ def get_model(input_size=784, hidden_size=50):
     Returns:
         torch.nn.Sequential: A PyTorch model
     """
-    model = torch.nn.Sequential(
-        torch.nn.Linear(input_size, hidden_size),
-        torch.nn.ReLU(),
-        torch.nn.Linear(hidden_size, 10),
+    model = nn.Sequential(
+        nn.Linear(input_size, hidden_size),
+        nn.ReLU(),
+        nn.Linear(hidden_size, 10),
     )
     return model
 
@@ -36,7 +38,7 @@ def train_model(model, X_train, y_train, learning_rate, epochs=500, level=None):
     Returns:
         float: The final training loss after the last epoch.
     """
-    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
     model.train()
     for _ in range(epochs):
         inputs = apply_augmentations(X_train, level=level) if level is not None else X_train
