@@ -14,7 +14,11 @@ def get_model(input_size=784, hidden_size=50):
     Returns:
         torch.nn.Sequential: A PyTorch model
     """
-    # write your code here
+    model = torch.nn.Sequential(
+        torch.nn.Linear(input_size, hidden_size),
+        torch.nn.ReLU(),
+        torch.nn.Linear(hidden_size, 10),
+    )
     return model
 
 
@@ -32,7 +36,17 @@ def train_model(model, X_train, y_train, learning_rate, epochs=500, level=None):
     Returns:
         float: The final training loss after the last epoch.
     """
-    # write your code here
+    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+    model.train()
+    for _ in range(epochs):
+        inputs = apply_augmentations(X_train, level=level) if level is not None else X_train
+
+        optimizer.zero_grad()
+        y_hat = model(inputs)
+        loss = F.cross_entropy(y_hat, y_train)
+        loss.backward()
+        optimizer.step()
+
     return loss.item()
 
 
@@ -50,7 +64,12 @@ def valid_metrics(model, X_valid, y_valid):
             - validation loss (float)
             - validation accuracy (float in [0, 1])
     """
-    # write your code here
+    model.eval()
+    with torch.no_grad():
+        y_hat = model(X_valid)
+        loss = F.cross_entropy(y_hat, y_valid)
+        y_pred = torch.argmax(y_hat, dim=1)
+        acc = (y_pred == y_valid).float().mean()
     return loss.item(), acc.item()
 
 
