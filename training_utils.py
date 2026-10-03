@@ -68,10 +68,10 @@ def valid_metrics(model, X_valid, y_valid):
     """
     model.eval()
     with torch.no_grad():
-        logit = model(X_valid)
-        loss = F.cross_entropy(logit, y_valid)
-        y_pred = torch.argmax(logit, dim=1)
-        acc = (y_pred == y_valid).float().mean()
+        logits = model(X_valid)
+        loss = F.cross_entropy(logits, y_valid)
+        preds = torch.argmax(logits, dim=1)
+        acc = (preds == y_valid).float().mean()
     return loss.item(), acc.item()
 
 
@@ -112,8 +112,8 @@ def apply_augmentations(image, level="mild", flip_prob=0.5):
         ])
     else:
         return image.reshape(N, -1)
-
-    image = transform(image)
+    chunk_size=128
+    image = torch.cat([transform(chunk) for chunk in image.split(chunk_size)])
     return image.reshape(N, -1)
 
 
