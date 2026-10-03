@@ -75,6 +75,34 @@ def valid_metrics(model, X_valid, y_valid):
     return loss.item(), acc.item()
 
 
+def run_experiment(X_train, y_train, X_valid, y_valid, learning_rate, hidden_size=50, epochs=500, level=None, seed=0):
+    """
+    Trains a freshly initialized model, evaluates it on the validation set and logs the results.
+
+    Args:
+        X_train, y_train (torch.Tensor): Training data and labels.
+        X_valid, y_valid (torch.Tensor): Validation data and labels.
+        learning_rate (float): Learning rate for the optimizer.
+        hidden_size (int): Number of neurons in the hidden layer.
+        epochs (int): Number of training epochs.
+        level (str or None): Augmentation level, None for no augmentation.
+        seed (int): Random seed, so every run starts from the same initialization.
+
+    Returns:
+        dict: The settings of the run with its train loss, validation loss and validation accuracy.
+    """
+    torch.manual_seed(seed)
+    model = get_model(input_size=X_train.shape[1], hidden_size=hidden_size)
+    train_loss = train_model(model, X_train, y_train, learning_rate, epochs=epochs, level=level)
+    valid_loss, valid_acc = valid_metrics(model, X_valid, y_valid)
+
+    augmentation = "baseline" if level is None else level
+    print(f"lr={learning_rate:<8g} hidden={hidden_size:<5} aug={augmentation:<10} | "
+          f"train_loss {train_loss:.4f} | valid_loss {valid_loss:.4f} | valid_acc {valid_acc:.4f}")
+    return {"learning_rate": learning_rate, "hidden_size": hidden_size, "augmentation": augmentation,
+            "train_loss": train_loss, "valid_loss": valid_loss, "valid_acc": valid_acc}
+
+
 def apply_augmentations(image, level="mild", flip_prob=0.5):
     """
     Apply a sequence of torchvision data augmentations based on the specified
@@ -125,5 +153,27 @@ def show_batch(images):
         plt.subplot(4, 4, i + 1)
         plt.imshow(img, cmap='gray')
         plt.axis('off')
+    plt.tight_layout()
+    plt.show()
+
+
+def plot_results(df, x, log_x=False, kind="line"):
+    """
+    Plots train/validation loss and validation accuracy as a function of one hyperparameter.
+
+    Args:
+        df (pd.DataFrame): Results table with train_loss, valid_loss and valid_acc columns.
+        x (str): Column to put on the x-axis.
+        log_x (bool): Use a log scale on the x-axis.
+        kind (str): "line" for numeric hyperparameters, "bar" for categories.
+    """
+    fig, ax = plt.subplots(1, 2, figsize=(12, 4))
+    if kind == "bar":
+        df.plot.bar(x=x, y=["train_loss", "valid_loss"], rot=0, ax=ax[0], title="Loss")
+        df.plot.bar(x=x, y="valid_acc", rot=0, ax=ax[1], title="Validation accuracy", legend=False)
+    else:
+        df.plot(x=x, y=["train_loss", "valid_loss"], logx=log_x, logy=True, marker="o", ax=ax[0], title="Loss")
+        df.plot(x=x, y="valid_acc", logx=log_x, marker="o", ax=ax[1], title="Validation accuracy", legend=False)
+    fig.suptitle(f"Effect of {x.replace('_', ' ')}")
     plt.tight_layout()
     plt.show()
